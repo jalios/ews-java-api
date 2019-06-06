@@ -392,12 +392,13 @@ public class Item extends ServiceObject {
    * be made if attachments have been added or removed.
    *
    * @param conflictResolutionMode the conflict resolution mode
+   * @return the updated appointment
    * @throws ServiceResponseException the service response exception
    * @throws Exception                the exception
    */
-  public void update(ConflictResolutionMode conflictResolutionMode)
+  public Item update(ConflictResolutionMode conflictResolutionMode)
       throws ServiceResponseException, Exception {
-    this.internalUpdate(null /* parentFolder */, conflictResolutionMode,
+    return this.internalUpdate(null /* parentFolder */, conflictResolutionMode,
         MessageDisposition.SaveOnly, null);
   }
 

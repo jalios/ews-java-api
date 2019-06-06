@@ -411,14 +411,15 @@ public class Appointment extends Item implements ICalendarActionProvider {
    *
    * @param conflictResolutionMode             the conflict resolution mode
    * @param sendInvitationsOrCancellationsMode the send invitations or cancellations mode
+   * @return the updated appointment
    * @throws Exception the exception
    */
-  public void update(
+  public Appointment update(
       ConflictResolutionMode conflictResolutionMode,
       SendInvitationsOrCancellationsMode
           sendInvitationsOrCancellationsMode)
       throws Exception {
-    this.internalUpdate(null, conflictResolutionMode, null,
+    return (Appointment) this.internalUpdate(null, conflictResolutionMode, null,
         sendInvitationsOrCancellationsMode);
   }
 
