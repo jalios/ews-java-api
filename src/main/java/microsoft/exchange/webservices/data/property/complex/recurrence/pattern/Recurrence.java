@@ -1070,7 +1070,7 @@ public abstract class Recurrence extends ComplexProperty {
     private DayOfTheWeekCollection daysOfTheWeek =
         new DayOfTheWeekCollection();
 
-    private Calendar firstDayOfWeek;
+    private DayOfTheWeek firstDayOfWeek;
 
     /**
      * Initializes a new instance of the WeeklyPattern class. specific days
@@ -1168,7 +1168,7 @@ public abstract class Recurrence extends ComplexProperty {
           return true;
         } else if (reader.getLocalName().equals(XmlElementNames.FirstDayOfWeek)) {
           this.firstDayOfWeek = reader.
-              readElementValue(Calendar.class,
+              readElementValue(DayOfTheWeek.class,
                   XmlNamespace.Types,
                   XmlElementNames.FirstDayOfWeek);
           return true;
@@ -1203,12 +1203,12 @@ public abstract class Recurrence extends ComplexProperty {
       return this.daysOfTheWeek;
     }
 
-    public Calendar getFirstDayOfWeek() throws ServiceValidationException {
-      return this.getFieldValueOrThrowIfNull(Calendar.class,
+    public DayOfTheWeek getFirstDayOfWeek() throws ServiceValidationException {
+      return this.getFieldValueOrThrowIfNull(DayOfTheWeek.class, 
           this.firstDayOfWeek, "FirstDayOfWeek");
     }
 
-    public void setFirstDayOfWeek(Calendar value) {
+    public void setFirstDayOfWeek(DayOfTheWeek value) {
       if (this.canSetFieldValue(this.firstDayOfWeek, value)) {
         this.firstDayOfWeek = value;
         this.changed();
