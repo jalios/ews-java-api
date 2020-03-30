@@ -391,7 +391,6 @@ public abstract class HttpWebRequest implements Closeable {
   /**
    * Whether web service authentication is allowed.
    * This can be set to {@code false} to disallow sending credential with this request.
-   *
    * This is useful for the autodiscover request to the legacy HTTP url, because this single request doesn't
    * require authentication and we don't want to send credential over HTTP.
    *
@@ -404,10 +403,8 @@ public abstract class HttpWebRequest implements Closeable {
   /**
    * Whether web service authentication is allowed.
    * This can be set to {@code false} to disallow sending credential with this request.
-   *
    * This is useful for the autodiscover request to the legacy HTTP url, because this single request doesn't
    * require authentication and we don't want to send credential over HTTP.
-   *
    * Default is {@code true}.
    *
    * @param allowAuthentication {@code true} if authentication is allowed.
@@ -563,7 +560,7 @@ public abstract class HttpWebRequest implements Closeable {
   /**
    * Executes Request by sending request xml data to server.
    *
-   * @throws EWSHttpException    the EWS http exception
+   * @throws EWSHttpException the EWS http exception
    * @throws java.io.IOException the IO Exception
    */
   public abstract int executeRequest() throws EWSHttpException, IOException;
