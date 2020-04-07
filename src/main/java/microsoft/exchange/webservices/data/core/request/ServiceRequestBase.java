@@ -23,6 +23,20 @@
 
 package microsoft.exchange.webservices.data.core.request;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.InflaterInputStream;
+
+import javax.xml.stream.XMLStreamException;
+import javax.xml.ws.http.HTTPException;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import microsoft.exchange.webservices.data.core.EwsServiceXmlReader;
 import microsoft.exchange.webservices.data.core.EwsServiceXmlWriter;
 import microsoft.exchange.webservices.data.core.EwsUtilities;
@@ -30,7 +44,6 @@ import microsoft.exchange.webservices.data.core.ExchangeServerInfo;
 import microsoft.exchange.webservices.data.core.ExchangeService;
 import microsoft.exchange.webservices.data.core.XmlAttributeNames;
 import microsoft.exchange.webservices.data.core.XmlElementNames;
-import microsoft.exchange.webservices.data.core.response.ServiceResponse;
 import microsoft.exchange.webservices.data.core.enumeration.misc.DateTimePrecision;
 import microsoft.exchange.webservices.data.core.enumeration.misc.ExchangeVersion;
 import microsoft.exchange.webservices.data.core.enumeration.misc.TraceFlags;
@@ -38,27 +51,15 @@ import microsoft.exchange.webservices.data.core.enumeration.misc.XmlNamespace;
 import microsoft.exchange.webservices.data.core.exception.http.EWSHttpException;
 import microsoft.exchange.webservices.data.core.exception.http.HttpErrorException;
 import microsoft.exchange.webservices.data.core.exception.service.local.ServiceLocalException;
-import microsoft.exchange.webservices.data.core.exception.service.remote.ServiceRequestException;
-import microsoft.exchange.webservices.data.core.exception.service.remote.ServiceResponseException;
 import microsoft.exchange.webservices.data.core.exception.service.local.ServiceVersionException;
 import microsoft.exchange.webservices.data.core.exception.service.local.ServiceXmlDeserializationException;
 import microsoft.exchange.webservices.data.core.exception.service.local.ServiceXmlSerializationException;
+import microsoft.exchange.webservices.data.core.exception.service.remote.ServiceRequestException;
+import microsoft.exchange.webservices.data.core.exception.service.remote.ServiceResponseException;
 import microsoft.exchange.webservices.data.core.exception.xml.XmlException;
+import microsoft.exchange.webservices.data.core.response.ServiceResponse;
 import microsoft.exchange.webservices.data.misc.SoapFaultDetails;
 import microsoft.exchange.webservices.data.security.XmlNodeType;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import javax.xml.stream.XMLStreamException;
-import javax.xml.ws.http.HTTPException;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.InflaterInputStream;
 
 /**
  * Represents an abstract service request.
@@ -192,15 +193,15 @@ public abstract class ServiceRequestBase<T> {
     writer.writeStartDocument();
     writer.writeStartElement(XmlNamespace.Soap, XmlElementNames.SOAPEnvelopeElementName);
     writer.writeAttributeValue("xmlns", EwsUtilities.getNamespacePrefix(XmlNamespace.Soap),
-                               EwsUtilities.getNamespaceUri(XmlNamespace.Soap));
+        EwsUtilities.getNamespaceUri(XmlNamespace.Soap));
     writer.writeAttributeValue("xmlns", EwsUtilities.EwsXmlSchemaInstanceNamespacePrefix,
-                               EwsUtilities.EwsXmlSchemaInstanceNamespace);
+        EwsUtilities.EwsXmlSchemaInstanceNamespace);
     writer.writeAttributeValue("xmlns", EwsUtilities.EwsMessagesNamespacePrefix,
-                               EwsUtilities.EwsMessagesNamespace);
+        EwsUtilities.EwsMessagesNamespace);
     writer.writeAttributeValue("xmlns", EwsUtilities.EwsTypesNamespacePrefix, EwsUtilities.EwsTypesNamespace);
     if (writer.isRequireWSSecurityUtilityNamespace()) {
       writer.writeAttributeValue("xmlns", EwsUtilities.WSSecurityUtilityNamespacePrefix,
-                                 EwsUtilities.WSSecurityUtilityNamespace);
+          EwsUtilities.WSSecurityUtilityNamespace);
     }
 
     writer.writeStartElement(XmlNamespace.Soap, XmlElementNames.SOAPHeaderElementName);
@@ -214,31 +215,31 @@ public abstract class ServiceRequestBase<T> {
     writer.writeAttributeValue(XmlAttributeNames.Version, this.getRequestedServiceVersionString());
     writer.writeEndElement(); // RequestServerVersion
 
-		/*
-                 * if ((this.getService().getRequestedServerVersion().ordinal() ==
-		 * ExchangeVersion.Exchange2007_SP1.ordinal() ||
-		 * this.EmitTimeZoneHeader()) &&
-		 * (!this.getService().getExchange2007CompatibilityMode())) {
-		 * writer.writeStartElement(XmlNamespace.Types,
-		 * XmlElementNames.TimeZoneContext);
-		 * 
-		 * this.getService().TimeZoneDefinition().WriteToXml(writer);
-		 * 
-		 * writer.WriteEndElement(); // TimeZoneContext
-		 * 
-		 * writer.IsTimeZoneHeaderEmitted = true; }
-		 */
+    /*
+     * if ((this.getService().getRequestedServerVersion().ordinal() ==
+     * ExchangeVersion.Exchange2007_SP1.ordinal() ||
+     * this.EmitTimeZoneHeader()) &&
+     * (!this.getService().getExchange2007CompatibilityMode())) {
+     * writer.writeStartElement(XmlNamespace.Types,
+     * XmlElementNames.TimeZoneContext);
+     *
+     * this.getService().TimeZoneDefinition().WriteToXml(writer);
+     *
+     * writer.WriteEndElement(); // TimeZoneContext
+     *
+     * writer.IsTimeZoneHeaderEmitted = true; }
+     */
 
     if (this.service.getPreferredCulture() != null) {
       writer.writeElementValue(XmlNamespace.Types, XmlElementNames.MailboxCulture,
-                               this.service.getPreferredCulture().getDisplayName());
+          this.service.getPreferredCulture().getDisplayName());
     }
 
     /** Emit the DateTimePrecision header */
 
     if (this.getService().getDateTimePrecision().ordinal() != DateTimePrecision.Default.ordinal()) {
       writer.writeElementValue(XmlNamespace.Types, XmlElementNames.DateTimePrecision,
-                               this.getService().getDateTimePrecision().toString());
+          this.getService().getDateTimePrecision().toString());
     }
     if (this.service.getImpersonatedUserId() != null) {
       this.service.getImpersonatedUserId().writeToXml(writer);
@@ -246,7 +247,7 @@ public abstract class ServiceRequestBase<T> {
 
     if (this.service.getCredentials() != null) {
       this.service.getCredentials()
-          .serializeExtraSoapHeaders(writer.getInternalWriter(), this.getXmlElementName());
+      .serializeExtraSoapHeaders(writer.getInternalWriter(), this.getXmlElementName());
     }
     this.service.doOnSerializeCustomSoapHeaders(writer.getInternalWriter());
 
@@ -317,7 +318,7 @@ public abstract class ServiceRequestBase<T> {
   protected void traceResponse(HttpWebRequest request, ByteArrayOutputStream memoryStream)
       throws XMLStreamException, IOException, EWSHttpException {
 
-    this.service.processHttpResponseHeaders(TraceFlags.EwsResponseHttpHeaders, request);
+    this.service.processHttpResponseHeaders(null, request);
     String contentType = request.getResponseContentType();
 
     if (!isNullOrEmpty(contentType) && (contentType.startsWith("text/") || contentType
@@ -522,7 +523,7 @@ public abstract class ServiceRequestBase<T> {
               // send a request that's not valid
               // for E12).
               if ((this.service.getServerInfo() != null) && (this.service.getServerInfo().getMajorVersion()
-                                                             == 8) && (
+                  == 8) && (
                       this.service.getServerInfo().getMinorVersion() == 0)) {
                 throw new ServiceVersionException("Exchange Server doesn't support the requested version.");
               }
@@ -534,8 +535,8 @@ public abstract class ServiceRequestBase<T> {
               // indicates that a request wasn't
               // valid for the version that was specified.
               EwsUtilities.ewsAssert(false, "ServiceRequestBase.ProcessWebException",
-                                     "Exchange server supports " + "requested version "
-                                     + "but request was invalid for that version");
+                  "Exchange server supports " + "requested version "
+                      + "but request was invalid for that version");
               break;
 
             default:
@@ -634,11 +635,11 @@ public abstract class ServiceRequestBase<T> {
     this.validate();
 
     HttpWebRequest request;
-    
+
     if (service.getMaximumPoolingConnections() > 1) {
-        request = buildEwsHttpPoolingWebRequest();
+      request = buildEwsHttpPoolingWebRequest();
     } else {
-        request = buildEwsHttpWebRequest();
+      request = buildEwsHttpWebRequest();
     }
 
     try {
@@ -663,7 +664,7 @@ public abstract class ServiceRequestBase<T> {
    * @throws Exception on error
    */
   protected HttpWebRequest buildEwsHttpWebRequest() throws Exception {
-      HttpWebRequest request = service.prepareHttpWebRequest();
+    HttpWebRequest request = service.prepareHttpWebRequest();
     return buildEwsHttpWebRequest(request);
   }
 
@@ -673,7 +674,7 @@ public abstract class ServiceRequestBase<T> {
    * <p>
    * Used for subscriptions.
    * </p>
-   * 
+   *
    * @return A HttpWebRequest instance
    * @throws Exception on error
    */
@@ -724,7 +725,7 @@ public abstract class ServiceRequestBase<T> {
       if (request.getResponseCode() >= 400) {
         throw new HttpErrorException(
             "The remote server returned an error: (" + request.getResponseCode() + ")" +
-            request.getResponseText(), request.getResponseCode());
+                request.getResponseText(), request.getResponseCode());
       }
     } catch (IOException e) {
       // Wrap exception.
@@ -754,10 +755,10 @@ public abstract class ServiceRequestBase<T> {
       reader.read(new XmlNodeType(XmlNodeType.START_DOCUMENT));
     } catch (XmlException ex) {
       throw new ServiceRequestException("The response received from the service didn't contain valid XML.",
-                                        ex);
+          ex);
     } catch (ServiceXmlDeserializationException ex) {
       throw new ServiceRequestException("The response received from the service didn't contain valid XML.",
-                                        ex);
+          ex);
     }
   }
 
