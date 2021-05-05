@@ -231,6 +231,7 @@ public final class TimeZoneUtils {
     map.put("America/North_Dakota/Beulah", "Central Standard Time");
     map.put("America/North_Dakota/Center", "Central Standard Time");
     map.put("America/North_Dakota/New_Salem", "Central Standard Time");
+    map.put("America/Nuuk", "Greenland Standard Time");
     map.put("America/Ojinaga", "Mountain Standard Time");
     map.put("America/Panama", "SA Pacific Standard Time");
     map.put("America/Pangnirtung", "Eastern Standard Time");
