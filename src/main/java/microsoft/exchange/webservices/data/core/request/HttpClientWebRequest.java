@@ -30,7 +30,6 @@ import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.NTCredentials;
 import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.config.AuthSchemes;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -44,9 +43,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 
 /**
@@ -63,14 +62,15 @@ public class HttpClientWebRequest extends HttpWebRequest {
 
   private final CloseableHttpClient httpClient;
   private final HttpClientContext httpContext;
-
+  private final List<String> authSchemes;
 
   /**
    * Instantiates a new http native web request.
    */
-  public HttpClientWebRequest(CloseableHttpClient httpClient, HttpClientContext httpContext) {
+  public HttpClientWebRequest(CloseableHttpClient httpClient, HttpClientContext httpContext, List<String> authSchemes) {
     this.httpClient = httpClient;
     this.httpContext = httpContext;
+    this.authSchemes = authSchemes;
   }
 
   /**
@@ -125,8 +125,8 @@ public class HttpClientWebRequest extends HttpWebRequest {
         RequestConfig.custom().setAuthenticationEnabled(true).setConnectionRequestTimeout(getTimeout())
             .setConnectTimeout(getTimeout()).setRedirectsEnabled(isAllowAutoRedirect())
             .setSocketTimeout(getTimeout())
-            .setTargetPreferredAuthSchemes(Arrays.asList(AuthSchemes.NTLM, AuthSchemes.BASIC))
-            .setProxyPreferredAuthSchemes(Arrays.asList(AuthSchemes.NTLM, AuthSchemes.BASIC));
+            .setTargetPreferredAuthSchemes(authSchemes)
+            .setProxyPreferredAuthSchemes(authSchemes);
 
     CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 

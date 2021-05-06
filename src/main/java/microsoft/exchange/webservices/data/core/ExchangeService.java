@@ -3606,6 +3606,7 @@ public class ExchangeService extends ExchangeServiceBase implements IAutodiscove
       throws Exception {
 
     AutodiscoverService autodiscoverService = new AutodiscoverService(this, requestedServerVersion);
+    autodiscoverService.setAuthSchemes(authSchemes);
     autodiscoverService.setWebProxy(getWebProxy());
     autodiscoverService.setTimeout(getTimeout());
     

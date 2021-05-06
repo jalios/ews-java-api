@@ -33,6 +33,7 @@ import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -61,6 +62,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.client.AuthenticationStrategy;
 import org.apache.http.client.CookieStore;
+import org.apache.http.client.config.AuthSchemes;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
@@ -153,6 +155,8 @@ public abstract class ExchangeServiceBase implements Closeable {
   protected CloseableHttpClient	httpPoolingClient;
   
   private int maximumPoolingConnections = 10;
+  
+  protected List<String> authSchemes;
 
 
 //  protected HttpClientWebRequest request = null;
@@ -170,10 +174,11 @@ public abstract class ExchangeServiceBase implements Closeable {
    * This constructor performs the initialization of the HTTP connection manager, so it should be called by
    * every other constructor.
    */
-  protected ExchangeServiceBase() {
+  protected ExchangeServiceBase() {    
     setUseDefaultCredentials(true);
     initializeHttpClient();
     initializeHttpContext();
+    initializeAuthSchemes(null);
   }
 
   protected ExchangeServiceBase(ExchangeVersion requestedServerVersion) {
@@ -193,6 +198,7 @@ public abstract class ExchangeServiceBase implements Closeable {
     this.userAgent = service.getUserAgent();
     this.acceptGzipEncoding = service.getAcceptGzipEncoding();
     this.httpHeaders = service.getHttpHeaders();
+    this.authSchemes = service.getAuthSchemes();
   }
 
   private void initializeHttpClient() {
@@ -263,6 +269,36 @@ public abstract class ExchangeServiceBase implements Closeable {
     httpContext.setCookieStore(cookieStore);
   }
 
+  /**
+   * initialize auth schemes for this service
+   * 
+   * @param authSchemesProp the authschemes property with auth scheme list
+   */
+  private void initializeAuthSchemes(String authSchemesProp) {
+    List<String> authSchemeList = new ArrayList();
+    if (authSchemesProp == null || "".equals(authSchemesProp.trim())) {
+      authSchemeList.add(AuthSchemes.NTLM);
+      authSchemeList.add(AuthSchemes.BASIC);
+    } else {
+      String[] schemes = authSchemesProp.split("[\\s,]");
+      for (String scheme : schemes) {
+        if (AuthSchemes.NTLM.equalsIgnoreCase(scheme)) {
+          authSchemeList.add(AuthSchemes.NTLM);
+        } else if (AuthSchemes.BASIC.equalsIgnoreCase(scheme)) {
+          authSchemeList.add(AuthSchemes.BASIC);
+        } else if (AuthSchemes.DIGEST.equalsIgnoreCase(scheme)) {
+          authSchemeList.add(AuthSchemes.DIGEST);
+        } else if (AuthSchemes.KERBEROS.equalsIgnoreCase(scheme)) {
+          authSchemeList.add(AuthSchemes.KERBEROS);
+        } else if (AuthSchemes.SPNEGO.equalsIgnoreCase(scheme)) {
+          authSchemeList.add(AuthSchemes.SPNEGO);
+        }
+      }
+    }
+    this.authSchemes = authSchemeList;
+  }
+
+
   @Override
   public void close() {
     IOUtils.closeQuietly(httpClient);
@@ -312,7 +348,7 @@ public abstract class ExchangeServiceBase implements Closeable {
       throw new ServiceLocalException(strErr);
     }
 
-    HttpClientWebRequest request = new HttpClientWebRequest(httpClient, httpContext);
+    HttpClientWebRequest request = new HttpClientWebRequest(httpClient, httpContext, authSchemes);
     prepareHttpWebRequestForUrl(url, acceptGzipEncoding, allowAutoRedirect, request);
 
     return request;
@@ -346,7 +382,7 @@ public abstract class ExchangeServiceBase implements Closeable {
       initializeHttpPoolingClient();
     }
 
-    HttpClientWebRequest request = new HttpClientWebRequest(httpPoolingClient, httpContext);
+    HttpClientWebRequest request = new HttpClientWebRequest(httpPoolingClient, httpContext, authSchemes);
     prepareHttpWebRequestForUrl(url, acceptGzipEncoding, allowAutoRedirect, request);
 
     return request;
@@ -892,5 +928,21 @@ public abstract class ExchangeServiceBase implements Closeable {
 
   public int getMaximumPoolingConnections() {
     return maximumPoolingConnections;
+  }
+
+  /**
+   * Gets the auth schemes.
+   * @return the auth schemes list
+   */
+  public List<String> getAuthSchemes() {
+    return authSchemes;
+  }
+  
+  /**
+   * Set the auth schemes for this service.
+   * @param authSchemes the auth schemes list
+   */
+  public void setAuthSchemes(List<String> authSchemes) {
+    this.authSchemes = authSchemes;
   }
 }
