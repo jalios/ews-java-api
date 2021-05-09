@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -45,6 +46,28 @@ import java.util.TimeZone;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.http.HttpHost;
+import org.apache.http.client.AuthCache;
+import org.apache.http.client.AuthenticationStrategy;
+import org.apache.http.client.CookieStore;
+import org.apache.http.client.config.AuthSchemes;
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.HttpClientConnectionManager;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.impl.auth.BasicScheme;
+import org.apache.http.impl.client.BasicAuthCache;
+import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+
 import microsoft.exchange.webservices.data.EWSConstants;
 import microsoft.exchange.webservices.data.core.enumeration.misc.ExchangeVersion;
 import microsoft.exchange.webservices.data.core.enumeration.misc.TraceFlags;
@@ -56,24 +79,6 @@ import microsoft.exchange.webservices.data.core.request.HttpWebRequest;
 import microsoft.exchange.webservices.data.credential.ExchangeCredentials;
 import microsoft.exchange.webservices.data.misc.EwsTraceListener;
 import microsoft.exchange.webservices.data.misc.ITraceListener;
-
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.http.client.AuthenticationStrategy;
-import org.apache.http.client.CookieStore;
-import org.apache.http.client.config.AuthSchemes;
-import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.config.Registry;
-import org.apache.http.config.RegistryBuilder;
-import org.apache.http.conn.HttpClientConnectionManager;
-import org.apache.http.conn.socket.ConnectionSocketFactory;
-import org.apache.http.conn.socket.PlainConnectionSocketFactory;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 
 /**
  * Represents an abstract binding to an Exchange Service.
@@ -390,14 +395,24 @@ public abstract class ExchangeServiceBase implements Closeable {
 
   private void prepareHttpWebRequestForUrl(URI url, boolean acceptGzipEncoding, boolean allowAutoRedirect,
       HttpClientWebRequest request) throws ServiceLocalException, URISyntaxException {
+    URL realUrl = null;
     try {
-      request.setUrl(url.toURL());
+      realUrl = url.toURL();
+      request.setUrl(realUrl);
     } catch (MalformedURLException e) {
       String strErr = String.format("Incorrect format : %s", url);
       throw new ServiceLocalException(strErr);
     }
 
     request.setPreAuthenticate(preAuthenticate);
+    if(preAuthenticate && realUrl != null) {
+      // Create AuthCache instance
+      AuthCache authCache = new BasicAuthCache();
+      // Generate BASIC scheme object and add it to the local auth cache
+      BasicScheme basicAuth = new BasicScheme();
+      authCache.put(new HttpHost(realUrl.getHost(), realUrl.getPort(), realUrl.getProtocol()), basicAuth);
+      httpContext.setAuthCache(authCache);
+    }
     request.setTimeout(timeout);
     request.setContentType("text/xml; charset=utf-8");
     request.setAccept("text/xml");
